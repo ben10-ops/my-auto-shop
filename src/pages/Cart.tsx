@@ -1,41 +1,19 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus, ShoppingBag, Tag, Truck, ChevronRight } from "lucide-react";
-import { allProducts } from "@/data/products";
+import { Trash2, Plus, Minus, ShoppingBag, Tag, Truck, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-interface CartItem {
-  productId: number;
-  quantity: number;
-}
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    { productId: 1, quantity: 2 },
-    { productId: 2, quantity: 1 },
-    { productId: 4, quantity: 1 },
-  ]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { cartItems, isLoading, updateQuantity, removeItem, subtotal } = useCart();
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
-
-  const getProduct = (id: number) => allProducts.find((p) => p.id === id);
-
-  const updateQuantity = (productId: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    setCartItems((items) =>
-      items.map((item) =>
-        item.productId === productId ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
-  const removeItem = (productId: number) => {
-    setCartItems((items) => items.filter((item) => item.productId !== productId));
-    toast.success("Item removed from cart");
-  };
 
   const applyCoupon = () => {
     if (couponCode.toLowerCase() === "save10") {
@@ -47,14 +25,57 @@ const Cart = () => {
     setCouponCode("");
   };
 
-  const subtotal = cartItems.reduce((total, item) => {
-    const product = getProduct(item.productId);
-    return total + (product?.price || 0) * item.quantity;
-  }, 0);
-
   const discount = appliedCoupon ? subtotal * 0.1 : 0;
   const deliveryCharge = subtotal > 2000 ? 0 : 99;
   const total = subtotal - discount + deliveryCharge;
+
+  const handleProceedToCheckout = () => {
+    if (!user) {
+      toast.error("Please login to proceed to checkout");
+      navigate("/login");
+      return;
+    }
+    // Pass cart state to checkout
+    navigate("/checkout", { 
+      state: { 
+        appliedCoupon, 
+        discount, 
+        deliveryCharge 
+      } 
+    });
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-20 text-center">
+          <ShoppingBag className="w-24 h-24 mx-auto text-muted-foreground mb-6" />
+          <h1 className="font-heading text-4xl mb-4">LOGIN TO VIEW CART</h1>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            Please login to view your cart and manage your items.
+          </p>
+          <Button asChild variant="hero" size="xl">
+            <Link to="/login">Login</Link>
+          </Button>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-20 text-center">
+          <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading cart...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -98,12 +119,12 @@ const Cart = () => {
           {/* Cart items */}
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item) => {
-              const product = getProduct(item.productId);
+              const product = item.product;
               if (!product) return null;
 
               return (
                 <div
-                  key={item.productId}
+                  key={item.id}
                   className="flex gap-4 p-4 rounded-2xl bg-card border border-border"
                 >
                   {/* Image */}
@@ -112,7 +133,7 @@ const Cart = () => {
                     className="w-24 h-24 md:w-32 md:h-32 rounded-xl overflow-hidden bg-muted flex-shrink-0"
                   >
                     <img
-                      src={product.image}
+                      src={product.image_url || "/placeholder.svg"}
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
@@ -130,12 +151,14 @@ const Cart = () => {
                             {product.name}
                           </h3>
                         </Link>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Fits: {product.compatibility}
-                        </p>
+                        {product.compatible_models && product.compatible_models.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Fits: {product.compatible_models.slice(0, 2).join(", ")}
+                          </p>
+                        )}
                       </div>
                       <button
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => removeItem(item.id)}
                         className="p-2 text-muted-foreground hover:text-destructive transition-colors"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -146,14 +169,14 @@ const Cart = () => {
                       {/* Quantity */}
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          onClick={() => updateQuantity({ cartItemId: item.id, quantity: item.quantity - 1 })}
                           className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         <span className="w-10 text-center font-medium">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          onClick={() => updateQuantity({ cartItemId: item.id, quantity: item.quantity + 1 })}
                           className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80"
                         >
                           <Plus className="w-4 h-4" />
@@ -250,12 +273,12 @@ const Cart = () => {
                 </div>
               )}
 
-              <Button variant="hero" size="xl" className="w-full" asChild>
-                <Link to="/checkout">Proceed to Checkout</Link>
+              <Button variant="hero" size="xl" className="w-full" onClick={handleProceedToCheckout}>
+                Proceed to Checkout
               </Button>
 
               <p className="text-center text-xs text-muted-foreground mt-4">
-                Secure checkout powered by Stripe
+                Cash on Delivery available
               </p>
             </div>
           </div>
