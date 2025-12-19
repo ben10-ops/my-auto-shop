@@ -12,6 +12,8 @@ import Checkout from "./pages/Checkout";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Account from "./pages/Account";
+import Orders from "./pages/Orders";
+import OrderTracking from "./pages/OrderTracking";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -40,6 +42,8 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/account/orders" element={<Orders />} />
+            <Route path="/track-order" element={<OrderTracking />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminDashboard />}>
