@@ -3,6 +3,7 @@ import { Search, Eye, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ const AdminOrders = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<any[]>([]);
+  const { logAction } = useAuditLog();
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -62,6 +64,9 @@ const AdminOrders = () => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    const oldStatus = order?.status;
+
     const { error } = await supabase
       .from("orders")
       .update({ status: newStatus })
@@ -70,6 +75,14 @@ const AdminOrders = () => {
     if (error) {
       toast.error("Failed to update order status");
     } else {
+      await logAction({
+        actionType: "STATUS_UPDATE",
+        tableName: "orders",
+        recordId: orderId,
+        oldValues: { status: oldStatus },
+        newValues: { status: newStatus },
+        description: `Order ${order?.order_number} status changed: ${oldStatus} → ${newStatus}`,
+      });
       toast.success("Order status updated");
       fetchOrders();
       if (selectedOrder?.id === orderId) {

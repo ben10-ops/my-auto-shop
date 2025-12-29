@@ -10,7 +10,8 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +22,7 @@ const sidebarItems = [
   { icon: ShoppingCart, label: "Orders", path: "/admin/orders" },
   { icon: Users, label: "Customers", path: "/admin/customers" },
   { icon: MapPin, label: "Delivery Areas", path: "/admin/delivery-areas" },
+  { icon: FileText, label: "Audit Logs", path: "/admin/audit-logs" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },
 ];
 

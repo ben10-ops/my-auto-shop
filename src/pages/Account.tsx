@@ -3,9 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { User, Package, MapPin, LogOut, Settings, ChevronRight } from "lucide-react";
+import { User, Package, MapPin, LogOut, Settings, ChevronRight, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { TwoFactorSetup } from "@/components/account/TwoFactorSetup";
 
 interface Order {
   id: string;
@@ -20,6 +21,13 @@ const Account = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+
+  const check2FAStatus = async () => {
+    const { data } = await supabase.auth.mfa.listFactors();
+    const verifiedFactor = data?.totp?.find((f) => f.status === "verified");
+    setIs2FAEnabled(!!verifiedFactor);
+  };
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -45,6 +53,9 @@ const Account = () => {
         .order("created_at", { ascending: false })
         .limit(5)
         .then(({ data }) => setOrders(data || []));
+
+      // Check 2FA status
+      check2FAStatus();
     }
   }, [user]);
 
@@ -162,6 +173,15 @@ const Account = () => {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Security - 2FA */}
+            <div className="p-6 rounded-2xl bg-card border border-border">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="w-5 h-5 text-primary" />
+                <h3 className="font-heading text-xl">Security</h3>
+              </div>
+              <TwoFactorSetup isEnabled={is2FAEnabled} onUpdate={check2FAStatus} />
             </div>
 
             {/* Recent orders */}
