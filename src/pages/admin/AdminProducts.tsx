@@ -3,6 +3,7 @@ import { Plus, Search, Edit, Trash2, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuditLog } from "@/hooks/useAuditLog";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ const AdminProducts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { logAction } = useAuditLog();
   const [formData, setFormData] = useState({
     name: "",
     price: "",
@@ -82,17 +84,34 @@ const AdminProducts = () => {
       if (error) {
         toast.error("Failed to update product");
       } else {
+        await logAction({
+          actionType: "UPDATE",
+          tableName: "products",
+          recordId: editingProduct.id,
+          oldValues: { name: editingProduct.name, price: editingProduct.price },
+          newValues: productData,
+          description: `Updated product: ${productData.name}`,
+        });
         toast.success("Product updated successfully");
         fetchProducts();
       }
     } else {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("products")
-        .insert([productData]);
+        .insert([productData])
+        .select()
+        .single();
 
       if (error) {
         toast.error("Failed to add product");
       } else {
+        await logAction({
+          actionType: "CREATE",
+          tableName: "products",
+          recordId: data?.id,
+          newValues: productData,
+          description: `Created product: ${productData.name}`,
+        });
         toast.success("Product added successfully");
         fetchProducts();
       }
@@ -120,6 +139,7 @@ const AdminProducts = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
+    const productToDelete = products.find((p) => p.id === id);
     const { error } = await supabase
       .from("products")
       .delete()
@@ -128,6 +148,13 @@ const AdminProducts = () => {
     if (error) {
       toast.error("Failed to delete product");
     } else {
+      await logAction({
+        actionType: "DELETE",
+        tableName: "products",
+        recordId: id,
+        oldValues: productToDelete,
+        description: `Deleted product: ${productToDelete?.name}`,
+      });
       toast.success("Product deleted");
       fetchProducts();
     }

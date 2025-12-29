@@ -20,6 +20,7 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminDeliveryAreas from "./pages/admin/AdminDeliveryAreas";
+import AdminAuditLogs from "./pages/admin/AdminAuditLogs";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="orders" element={<AdminOrders />} />
               <Route path="customers" element={<AdminCustomers />} />
               <Route path="delivery-areas" element={<AdminDeliveryAreas />} />
+              <Route path="audit-logs" element={<AdminAuditLogs />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
             
