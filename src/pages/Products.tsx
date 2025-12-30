@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/products/ProductCard";
 import { allProducts, categories, brands } from "@/data/products";
-import { Filter, SlidersHorizontal, ChevronDown, X } from "lucide-react";
+import { Search, Filter, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -18,6 +18,7 @@ const priceRanges = [
 
 const Products = () => {
   const { category } = useParams();
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("popular");
@@ -25,48 +26,63 @@ const Products = () => {
 
   const categoryInfo = categories.find((c) => c.id === category);
 
-  let filteredProducts = category
-    ? allProducts.filter((p) => p.category === category)
-    : allProducts;
+  const filteredProducts = useMemo(() => {
+    let products = category
+      ? allProducts.filter((p) => p.category === category)
+      : allProducts;
 
-  if (selectedBrands.length > 0) {
-    filteredProducts = filteredProducts.filter((p) =>
-      selectedBrands.includes(p.brand)
-    );
-  }
-
-  if (selectedPriceRange) {
-    const range = priceRanges.find((r) => r.id === selectedPriceRange);
-    if (range) {
-      filteredProducts = filteredProducts.filter(
-        (p) => p.price >= range.min && p.price <= range.max
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      products = products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.brand.toLowerCase().includes(query) ||
+          p.compatibility.toLowerCase().includes(query)
       );
     }
-  }
 
-  if (sortBy === "price-low") {
-    filteredProducts = [...filteredProducts].sort((a, b) => a.price - b.price);
-  } else if (sortBy === "price-high") {
-    filteredProducts = [...filteredProducts].sort((a, b) => b.price - a.price);
-  } else if (sortBy === "rating") {
-    filteredProducts = [...filteredProducts].sort((a, b) => b.rating - a.rating);
-  }
+    // Brand filter
+    if (selectedBrands.length > 0) {
+      products = products.filter((p) => selectedBrands.includes(p.brand));
+    }
+
+    // Price filter
+    if (selectedPriceRange) {
+      const range = priceRanges.find((r) => r.id === selectedPriceRange);
+      if (range) {
+        products = products.filter(
+          (p) => p.price >= range.min && p.price <= range.max
+        );
+      }
+    }
+
+    // Sort
+    if (sortBy === "price-low") {
+      products = [...products].sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price-high") {
+      products = [...products].sort((a, b) => b.price - a.price);
+    } else if (sortBy === "rating") {
+      products = [...products].sort((a, b) => b.rating - a.rating);
+    }
+
+    return products;
+  }, [category, searchQuery, selectedBrands, selectedPriceRange, sortBy]);
 
   const toggleBrand = (brand: string) => {
     setSelectedBrands((prev) =>
-      prev.includes(brand)
-        ? prev.filter((b) => b !== brand)
-        : [...prev, brand]
+      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
     );
   };
 
   const clearFilters = () => {
+    setSearchQuery("");
     setSelectedBrands([]);
     setSelectedPriceRange(null);
   };
 
   const activeFiltersCount =
-    selectedBrands.length + (selectedPriceRange ? 1 : 0);
+    selectedBrands.length + (selectedPriceRange ? 1 : 0) + (searchQuery ? 1 : 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,7 +90,7 @@ const Products = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <a href="/" className="hover:text-primary transition-colors">Home</a>
+          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
           <span>/</span>
           <span className="text-foreground">
             {categoryInfo?.name || "All Products"}
@@ -82,20 +98,27 @@ const Products = () => {
         </nav>
 
         {/* Page header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-          <div>
-            <h1 className="font-heading text-4xl md:text-5xl mb-2">
-              {categoryInfo?.name || "ALL PRODUCTS"}
-            </h1>
-            <p className="text-muted-foreground">
-              {filteredProducts.length} products found
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Mobile filter button */}
+        <div className="mb-6">
+          <h1 className="font-heading text-3xl md:text-4xl mb-4">
+            {categoryInfo?.name || "ALL PRODUCTS"}
+          </h1>
+          
+          {/* Search bar */}
+          <div className="flex gap-3 flex-wrap">
+            <div className="flex-1 min-w-[200px] max-w-md relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products..."
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+              />
+            </div>
+            
             <Button
               variant="outline"
+              size="sm"
               className="lg:hidden"
               onClick={() => setShowFilters(true)}
             >
@@ -108,75 +131,74 @@ const Products = () => {
               )}
             </Button>
 
-            {/* Sort dropdown */}
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none h-10 pl-4 pr-10 rounded-lg bg-card border border-border text-foreground focus:outline-none focus:border-primary"
-              >
-                <option value="popular">Most Popular</option>
-                <option value="rating">Highest Rated</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="h-10 px-3 rounded-lg bg-card border border-border text-foreground focus:outline-none focus:border-primary text-sm"
+            >
+              <option value="popular">Popular</option>
+              <option value="rating">Top Rated</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
           </div>
+          
+          <p className="text-sm text-muted-foreground mt-3">
+            {filteredProducts.length} products found
+          </p>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex gap-6">
           {/* Sidebar filters - Desktop */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-6">
+          <aside className="hidden lg:block w-56 flex-shrink-0">
+            <div className="sticky top-20 space-y-4">
               {/* Categories */}
-              <div className="p-6 rounded-2xl bg-card border border-border">
-                <h3 className="font-heading text-lg mb-4">CATEGORIES</h3>
-                <ul className="space-y-2">
+              <div className="p-4 rounded-xl bg-card border border-border">
+                <h3 className="font-semibold text-sm mb-3">Categories</h3>
+                <ul className="space-y-1">
                   <li>
-                    <a
-                      href="/products"
-                      className={`block py-2 px-3 rounded-lg transition-colors ${
+                    <Link
+                      to="/products"
+                      className={`block py-1.5 px-2 rounded text-sm transition-colors ${
                         !category
                           ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       All Products
-                    </a>
+                    </Link>
                   </li>
                   {categories.map((cat) => (
                     <li key={cat.id}>
-                      <a
-                        href={`/products/${cat.id}`}
-                        className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
+                      <Link
+                        to={`/products/${cat.id}`}
+                        className={`block py-1.5 px-2 rounded text-sm transition-colors ${
                           category === cat.id
                             ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <span>{cat.name}</span>
-                        <span className="text-xs">{cat.count}</span>
-                      </a>
+                        {cat.name}
+                      </Link>
                     </li>
                   ))}
                 </ul>
               </div>
 
               {/* Brands */}
-              <div className="p-6 rounded-2xl bg-card border border-border">
-                <h3 className="font-heading text-lg mb-4">BRANDS</h3>
-                <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-card border border-border">
+                <h3 className="font-semibold text-sm mb-3">Brands</h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
                   {brands.map((brand) => (
                     <label
                       key={brand}
-                      className="flex items-center gap-3 cursor-pointer group"
+                      className="flex items-center gap-2 cursor-pointer"
                     >
                       <Checkbox
                         checked={selectedBrands.includes(brand)}
                         onCheckedChange={() => toggleBrand(brand)}
                       />
-                      <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                      <span className="text-sm text-muted-foreground">
                         {brand}
                       </span>
                     </label>
@@ -185,13 +207,13 @@ const Products = () => {
               </div>
 
               {/* Price Range */}
-              <div className="p-6 rounded-2xl bg-card border border-border">
-                <h3 className="font-heading text-lg mb-4">PRICE RANGE</h3>
-                <div className="space-y-3">
+              <div className="p-4 rounded-xl bg-card border border-border">
+                <h3 className="font-semibold text-sm mb-3">Price Range</h3>
+                <div className="space-y-2">
                   {priceRanges.map((range) => (
                     <label
                       key={range.id}
-                      className="flex items-center gap-3 cursor-pointer group"
+                      className="flex items-center gap-2 cursor-pointer"
                     >
                       <Checkbox
                         checked={selectedPriceRange === range.id}
@@ -201,7 +223,7 @@ const Products = () => {
                           )
                         }
                       />
-                      <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                      <span className="text-sm text-muted-foreground">
                         {range.label}
                       </span>
                     </label>
@@ -209,14 +231,14 @@ const Products = () => {
                 </div>
               </div>
 
-              {/* Clear filters */}
               {activeFiltersCount > 0 && (
                 <Button
                   variant="outline"
+                  size="sm"
                   className="w-full"
                   onClick={clearFilters}
                 >
-                  Clear All Filters
+                  Clear Filters
                 </Button>
               )}
             </div>
@@ -225,18 +247,18 @@ const Products = () => {
           {/* Products grid */}
           <div className="flex-1">
             {filteredProducts.length === 0 ? (
-              <div className="text-center py-20">
-                <SlidersHorizontal className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-heading text-2xl mb-2">No Products Found</h3>
-                <p className="text-muted-foreground mb-6">
-                  Try adjusting your filters to find what you're looking for.
+              <div className="text-center py-16">
+                <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="font-semibold text-lg mb-2">No Products Found</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Try adjusting your search or filters.
                 </p>
-                <Button variant="outline" onClick={clearFilters}>
+                <Button variant="outline" size="sm" onClick={clearFilters}>
                   Clear Filters
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -249,35 +271,33 @@ const Products = () => {
         {showFilters && (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div
-              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-background/80"
               onClick={() => setShowFilters(false)}
             />
-            <div className="absolute right-0 top-0 bottom-0 w-80 bg-card border-l border-border p-6 overflow-y-auto animate-slide-up">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-heading text-xl">FILTERS</h3>
+            <div className="absolute right-0 top-0 bottom-0 w-72 bg-card border-l border-border p-4 overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Filters</h3>
                 <button onClick={() => setShowFilters(false)}>
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Mobile filter content */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Categories */}
                 <div>
-                  <h4 className="font-semibold mb-3">Categories</h4>
-                  <ul className="space-y-2">
+                  <h4 className="font-medium text-sm mb-2">Categories</h4>
+                  <ul className="space-y-1">
                     {categories.map((cat) => (
                       <li key={cat.id}>
-                        <a
-                          href={`/products/${cat.id}`}
-                          className={`block py-2 ${
-                            category === cat.id
-                              ? "text-primary"
-                              : "text-muted-foreground"
+                        <Link
+                          to={`/products/${cat.id}`}
+                          onClick={() => setShowFilters(false)}
+                          className={`block py-1.5 text-sm ${
+                            category === cat.id ? "text-primary" : "text-muted-foreground"
                           }`}
                         >
                           {cat.name}
-                        </a>
+                        </Link>
                       </li>
                     ))}
                   </ul>
@@ -285,13 +305,10 @@ const Products = () => {
 
                 {/* Brands */}
                 <div>
-                  <h4 className="font-semibold mb-3">Brands</h4>
-                  <div className="space-y-3">
+                  <h4 className="font-medium text-sm mb-2">Brands</h4>
+                  <div className="space-y-2">
                     {brands.map((brand) => (
-                      <label
-                        key={brand}
-                        className="flex items-center gap-3 cursor-pointer"
-                      >
+                      <label key={brand} className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                           checked={selectedBrands.includes(brand)}
                           onCheckedChange={() => toggleBrand(brand)}
@@ -304,13 +321,10 @@ const Products = () => {
 
                 {/* Price */}
                 <div>
-                  <h4 className="font-semibold mb-3">Price Range</h4>
-                  <div className="space-y-3">
+                  <h4 className="font-medium text-sm mb-2">Price Range</h4>
+                  <div className="space-y-2">
                     {priceRanges.map((range) => (
-                      <label
-                        key={range.id}
-                        className="flex items-center gap-3 cursor-pointer"
-                      >
+                      <label key={range.id} className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                           checked={selectedPriceRange === range.id}
                           onCheckedChange={() =>
@@ -325,7 +339,7 @@ const Products = () => {
                   </div>
                 </div>
 
-                <Button className="w-full" onClick={() => setShowFilters(false)}>
+                <Button className="w-full" size="sm" onClick={() => setShowFilters(false)}>
                   Apply Filters
                 </Button>
               </div>
