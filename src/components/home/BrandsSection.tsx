@@ -1,34 +1,18 @@
-const brands = [
-  { name: "Bosch", logo: "BOSCH" },
-  { name: "Castrol", logo: "CASTROL" },
-  { name: "NGK", logo: "NGK" },
-  { name: "Exide", logo: "EXIDE" },
-  { name: "Philips", logo: "PHILIPS" },
-  { name: "Mann", logo: "MANN" },
-  { name: "Monroe", logo: "MONROE" },
-  { name: "Valeo", logo: "VALEO" },
-];
+const brands = ["Bosch", "Castrol", "NGK", "Exide", "Philips", "Valeo"];
 
 export const BrandsSection = () => {
   return (
-    <section className="py-16 bg-card/30 border-y border-border">
+    <section className="py-12 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h3 className="text-muted-foreground text-sm uppercase tracking-widest">
-            Trusted Brands We Stock
-          </h3>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16">
+        <p className="text-center text-sm text-muted-foreground mb-6">Trusted Brands</p>
+        <div className="flex flex-wrap items-center justify-center gap-8">
           {brands.map((brand) => (
-            <div
-              key={brand.name}
-              className="group px-6 py-4 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+            <span
+              key={brand}
+              className="text-lg font-heading text-muted-foreground/60 hover:text-primary transition-colors"
             >
-              <span className="font-heading text-2xl md:text-3xl text-muted-foreground group-hover:text-primary transition-colors">
-                {brand.logo}
-              </span>
-            </div>
+              {brand}
+            </span>
           ))}
         </div>
       </div>
