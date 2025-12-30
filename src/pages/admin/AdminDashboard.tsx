@@ -10,11 +10,18 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight,
-  FileText
+  FileText,
+  Home
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
@@ -52,102 +59,115 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile header */}
-      <header className="lg:hidden sticky top-0 z-50 h-16 bg-card border-b border-border flex items-center px-4 gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        >
-          {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </Button>
+      {/* Top Header */}
+      <header className="sticky top-0 z-50 h-14 bg-card border-b border-border flex items-center justify-between px-4">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          >
+            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+          <Link to="/admin" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <span className="font-heading text-lg text-primary-foreground">M</span>
+            </div>
+            <span className="font-heading text-lg">Admin</span>
+          </Link>
+        </div>
+
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg accent-gradient flex items-center justify-center">
-            <span className="font-heading text-lg text-primary-foreground">M</span>
-          </div>
-          <span className="font-heading text-lg">Admin</span>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/">
+              <Home className="w-4 h-4 mr-2" />
+              View Site
+            </Link>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-primary text-sm font-semibold">
+                    {user.email?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-card border-border">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium truncate">{user.email}</p>
+                <p className="text-xs text-muted-foreground">Administrator</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className={`
-          fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-card border-r border-border 
-          transform transition-transform lg:translate-x-0
-          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        `}>
-          {/* Logo */}
-          <div className="h-16 flex items-center px-6 border-b border-border">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-lg accent-gradient flex items-center justify-center">
-                <span className="font-heading text-xl text-primary-foreground">M</span>
-              </div>
-              <div>
-                <h1 className="font-heading text-lg leading-none">Mahalaxmi</h1>
-                <p className="text-xs text-primary">Admin Panel</p>
-              </div>
-            </Link>
-          </div>
-
-          {/* Nav items */}
-          <nav className="p-4 space-y-1">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:block w-56 min-h-[calc(100vh-3.5rem)] bg-card border-r border-border">
+          <nav className="p-3 space-y-1">
             {sidebarItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
-                    ${isActive 
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    isActive 
                       ? "bg-primary text-primary-foreground" 
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }
-                  `}
+                  }`}
                 >
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                  {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
                 </Link>
               );
             })}
           </nav>
-
-          {/* User section */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-primary font-semibold">
-                  {user.email?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user.email}</p>
-                <p className="text-xs text-muted-foreground">Administrator</p>
-              </div>
-            </div>
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={signOut}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
         </aside>
 
-        {/* Overlay */}
+        {/* Mobile Sidebar */}
         {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-background/80 z-30 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
+          <>
+            <div 
+              className="fixed inset-0 bg-background/80 z-40 lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+            <aside className="fixed top-14 left-0 bottom-0 w-56 bg-card border-r border-border z-50 lg:hidden">
+              <nav className="p-3 space-y-1">
+                {sidebarItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive 
+                          ? "bg-primary text-primary-foreground" 
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </aside>
+          </>
         )}
 
-        {/* Main content */}
-        <main className="flex-1 lg:ml-0 min-h-screen">
+        {/* Main Content */}
+        <main className="flex-1 min-h-[calc(100vh-3.5rem)]">
           <Outlet />
         </main>
       </div>
