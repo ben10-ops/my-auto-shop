@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { allProducts } from "@/data/products";
 import { ProductCard } from "@/components/products/ProductCard";
+import { ProductReviews } from "@/components/products/ProductReviews";
 import { Button } from "@/components/ui/button";
 import { 
   Star, 
@@ -320,54 +321,7 @@ const ProductDetail = () => {
               )}
 
               {activeTab === "reviews" && (
-                <div>
-                  <div className="flex items-center gap-8 mb-8">
-                    <div className="text-center">
-                      <div className="font-heading text-5xl text-primary">{product.rating}</div>
-                      <div className="flex items-center gap-1 my-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < Math.floor(product.rating)
-                                ? "fill-primary text-primary"
-                                : "text-muted"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{product.reviews} reviews</p>
-                    </div>
-                  </div>
-
-                  {/* Sample reviews */}
-                  <div className="space-y-6">
-                    {[
-                      { name: "Rahul M.", rating: 5, text: "Excellent quality! Fits perfectly and works great. Fast delivery too." },
-                      { name: "Suresh K.", rating: 4, text: "Good product, genuine brand. Installation was easy." },
-                      { name: "Vikram S.", rating: 5, text: "Best price I found online. Product is as described." },
-                    ].map((review, i) => (
-                      <div key={i} className="p-6 rounded-xl bg-card border border-border">
-                        <div className="flex items-center gap-4 mb-3">
-                          <div className="w-10 h-10 rounded-full accent-gradient flex items-center justify-center">
-                            <span className="font-heading text-primary-foreground">
-                              {review.name[0]}
-                            </span>
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{review.name}</h4>
-                            <div className="flex items-center gap-1">
-                              {[...Array(review.rating)].map((_, j) => (
-                                <Star key={j} className="w-3 h-3 fill-primary text-primary" />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <p className="text-muted-foreground">{review.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <ProductReviews productId={String(product.id)} />
               )}
             </div>
           </div>
