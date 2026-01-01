@@ -2,6 +2,7 @@ import { Star, ShoppingCart, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 export interface Product {
   id: number | string;
@@ -21,12 +22,25 @@ interface ProductCardProps {
   product: Product;
 }
 
+// Helper to check if an ID is a valid UUID
+const isValidUUID = (id: string | number): boolean => {
+  if (typeof id === 'number') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addToCart } = useCart();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (!isValidUUID(product.id)) {
+      toast.info("Demo product - add real products from admin panel to enable cart");
+      return;
+    }
+    
     addToCart({ productId: String(product.id), quantity: 1 });
   };
   return (

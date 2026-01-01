@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { 
   Star, 
   ShoppingCart, 
@@ -100,8 +101,8 @@ const ProductDetail = () => {
     if ('isFromDb' in product && product.isFromDb) {
       addToCart({ productId: String(product.id), quantity });
     } else {
-      // For demo products, show a message
-      addToCart({ productId: String(product.id), quantity });
+      // Demo products can't be added to cart (they have numeric IDs, DB requires UUIDs)
+      toast.info("Demo product - add real products from admin panel to enable cart");
     }
   };
 
