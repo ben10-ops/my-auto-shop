@@ -6,6 +6,9 @@ import { allProducts } from "@/data/products";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ProductReviews } from "@/components/products/ProductReviews";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/useCart";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Star, 
   ShoppingCart, 
@@ -18,17 +21,62 @@ import {
   Check,
   ChevronRight
 } from "lucide-react";
-import { toast } from "sonner";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
+  const { addToCart } = useCart();
 
-  const product = allProducts.find((p) => p.id === Number(id));
+  // Try to fetch from Supabase first
+  const { data: dbProduct, isLoading } = useQuery({
+    queryKey: ["product", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // Fallback to local products for demo
+  const localProduct = allProducts.find((p) => p.id === Number(id));
+  
+  // Use DB product if available, otherwise local
+  const product = dbProduct ? {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    brand: dbProduct.brand,
+    price: dbProduct.price,
+    originalPrice: dbProduct.original_price || dbProduct.price,
+    rating: 4.5,
+    reviews: 0,
+    image: dbProduct.image_url || "/placeholder.svg",
+    compatibility: dbProduct.compatible_models?.join(", ") || "Universal",
+    inStock: (dbProduct.stock || 0) > 0,
+    category: dbProduct.category,
+    isFromDb: true,
+  } : localProduct ? { ...localProduct, isFromDb: false } : null;
+
   const relatedProducts = allProducts
     .filter((p) => p.category === product?.category && p.id !== product?.id)
     .slice(0, 4);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-20 text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -49,10 +97,17 @@ const ProductDetail = () => {
   }
 
   const handleAddToCart = () => {
-    toast.success(`Added ${quantity} x ${product.name} to cart!`);
+    if ('isFromDb' in product && product.isFromDb) {
+      addToCart({ productId: String(product.id), quantity });
+    } else {
+      // For demo products, show a message
+      addToCart({ productId: String(product.id), quantity });
+    }
   };
 
-  const discount = Math.round((1 - product.price / product.originalPrice) * 100);
+  const discount = product.originalPrice > product.price 
+    ? Math.round((1 - product.price / product.originalPrice) * 100) 
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
