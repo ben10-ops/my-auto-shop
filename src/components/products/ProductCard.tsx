@@ -1,9 +1,10 @@
 import { Star, ShoppingCart, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/useCart";
 
 export interface Product {
-  id: number;
+  id: number | string;
   name: string;
   brand: string;
   price: number;
@@ -21,6 +22,13 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart({ productId: String(product.id), quantity: 1 });
+  };
   return (
     <div className="group relative rounded-2xl bg-card border border-border overflow-hidden hover:border-primary/50 transition-all duration-300">
       {/* Discount badge */}
@@ -96,6 +104,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             size="icon" 
             disabled={!product.inStock}
             className="rounded-lg"
+            onClick={handleAddToCart}
           >
             <ShoppingCart className="w-4 h-4" />
           </Button>
