@@ -14,6 +14,7 @@ import Signup from "./pages/Signup";
 import Account from "./pages/Account";
 import Orders from "./pages/Orders";
 import OrderTracking from "./pages/OrderTracking";
+import Wishlist from "./pages/Wishlist";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminProducts from "./pages/admin/AdminProducts";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/account" element={<Account />} />
             <Route path="/account/orders" element={<Orders />} />
             <Route path="/track-order" element={<OrderTracking />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminDashboard />}>
