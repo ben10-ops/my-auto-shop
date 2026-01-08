@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/products/ProductCard";
-import { allProducts, categories, brands } from "@/data/products";
+import { categories, brands } from "@/data/products";
+import { supabase } from "@/integrations/supabase/client";
 import { Search, Filter, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +18,16 @@ const priceRanges = [
   { id: "10000+", label: "Above ₹10,000", min: 10000, max: Infinity },
 ];
 
+// Map URL category slugs to database category names
+const categorySlugToName: Record<string, string> = {
+  "engine-parts": "Engine Parts",
+  "brake-system": "Brake System",
+  "suspension-steering": "Suspension & Steering",
+  "electrical-parts": "Electrical Parts",
+  "tires-wheels": "Tires & Wheels",
+  "accessories": "Accessories",
+};
+
 const Products = () => {
   const { category } = useParams();
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,12 +36,41 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("popular");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Fetch products from database
+  const { data: dbProducts = [], isLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const categoryInfo = categories.find((c) => c.id === category);
+  const dbCategoryName = category ? categorySlugToName[category] : null;
 
   const filteredProducts = useMemo(() => {
-    let products = category
-      ? allProducts.filter((p) => p.category === category)
-      : allProducts;
+    // Map DB products to ProductCard format
+    let products = dbProducts.map(p => ({
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      price: Number(p.price),
+      originalPrice: p.original_price ? Number(p.original_price) : undefined,
+      image: p.image_url || "/placeholder.svg",
+      rating: 4.5, // Default rating for now
+      reviews: 0,
+      category: p.category,
+      compatibility: p.compatible_models?.join(', ') || '',
+      inStock: (p.stock ?? 0) > 0,
+    }));
+    if (dbCategoryName) {
+      products = products.filter((p) => p.category === dbCategoryName);
+    }
 
     // Search filter
     if (searchQuery.trim()) {
@@ -67,7 +108,7 @@ const Products = () => {
     }
 
     return products;
-  }, [category, searchQuery, selectedBrands, selectedPriceRange, sortBy]);
+  }, [dbProducts, dbCategoryName, searchQuery, selectedBrands, selectedPriceRange, sortBy]);
 
   const toggleBrand = (brand: string) => {
     setSelectedBrands((prev) =>
