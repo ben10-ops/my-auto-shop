@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X, Phone, ChevronDown } from "lucide-react";
+import { Heart, User, Menu, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
+import { MiniCart } from "@/components/cart/MiniCart";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,9 +16,8 @@ const categories = ["Engine Parts", "Brake System", "Suspension", "Electrical", 
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const { user, isAdmin } = useAuth();
-  const { itemCount } = useCart();
+  const { wishlistCount } = useWishlist();
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
@@ -63,15 +63,16 @@ export const Header = () => {
           {/* Actions */}
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" asChild className="relative">
-              <Link to="/cart">
-                <ShoppingCart className="w-5 h-5" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-semibold">
-                    {itemCount > 99 ? "99+" : itemCount}
+              <Link to="/wishlist">
+                <Heart className="w-5 h-5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-semibold">
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
                   </span>
                 )}
               </Link>
             </Button>
+            <MiniCart />
             
             {user ? (
               <Button variant="ghost" size="icon" asChild>

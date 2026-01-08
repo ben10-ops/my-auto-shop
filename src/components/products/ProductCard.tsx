@@ -2,6 +2,8 @@ import { Star, ShoppingCart, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export interface Product {
@@ -31,6 +33,28 @@ const isValidUUID = (id: string | number): boolean => {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const { user } = useAuth();
+  
+  const isDbProduct = isValidUUID(product.id);
+  const inWishlist = isDbProduct && isInWishlist(String(product.id));
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.info("Please login to add items to wishlist");
+      return;
+    }
+    
+    if (!isDbProduct) {
+      toast.info("Demo product - add real products from admin panel");
+      return;
+    }
+    
+    toggleWishlist(String(product.id));
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -53,8 +77,15 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       )}
 
       {/* Wishlist button */}
-      <button className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-primary-foreground">
-        <Heart className="w-4 h-4" />
+      <button 
+        onClick={handleWishlistToggle}
+        className={`absolute top-4 right-4 z-10 w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center transition-all ${
+          inWishlist 
+            ? "bg-destructive text-destructive-foreground opacity-100" 
+            : "bg-background/80 opacity-0 group-hover:opacity-100 hover:bg-primary hover:text-primary-foreground"
+        }`}
+      >
+        <Heart className={`w-4 h-4 ${inWishlist ? "fill-current" : ""}`} />
       </button>
 
       {/* Image */}
