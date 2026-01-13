@@ -1,6 +1,7 @@
-import { Search, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { ProductSearch } from "@/components/search/ProductSearch";
 
 export const HeroSection = () => {
   return (
@@ -24,16 +25,9 @@ export const HeroSection = () => {
             Your one-stop destination for genuine spare parts. Fast local delivery and unbeatable prices.
           </p>
 
-          {/* Search */}
-          <div className="flex items-center bg-card border border-border rounded-lg overflow-hidden max-w-md mx-auto mb-8">
-            <input
-              type="text"
-              placeholder="Search parts..."
-              className="flex-1 h-12 px-4 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
-            />
-            <Button size="icon" className="m-1.5 rounded-md">
-              <Search className="w-4 h-4" />
-            </Button>
+          {/* Search with Autocomplete */}
+          <div className="max-w-md mx-auto mb-8">
+            <ProductSearch variant="hero" />
           </div>
 
           {/* CTA */}

@@ -1,12 +1,12 @@
-import { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/products/ProductCard";
 import { categories, brands } from "@/data/products";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Filter, ChevronDown, X } from "lucide-react";
+import { Search, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -30,11 +30,19 @@ const categorySlugToName: Record<string, string> = {
 
 const Products = () => {
   const { category } = useParams();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const urlSearchQuery = searchParams.get("search") || "";
+  
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("popular");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sync search query from URL
+  useEffect(() => {
+    setSearchQuery(urlSearchQuery);
+  }, [urlSearchQuery]);
 
   // Fetch products from database
   const { data: dbProducts = [], isLoading } = useQuery({
